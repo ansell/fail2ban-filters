@@ -27,6 +27,27 @@ It also matches the following attempts to use Nginx as an HTTP proxy. These case
 62.171.147.55 - - [15/Apr/2022:20:34:07 +0100] "CONNECT 62.171.147.55:884 HTTP/1.1" 400 157 "-" "-" "-"
 ```
 
+### UFW TCP SYN
+
+The `ufw-tcp-syn` filter detects TCP port scans and temporarily silences their activity by blocking them in IPTables to reduce the noise in the UFW log files. Persistent scanners will still find all open ports, so this is not a security solution.
+
+For example, it aims to block the following port scans:
+
+```
+Apr 11 06:29:24 localhost kernel: [952101.937197] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=164.92.106.112 DST=112.101.251.51 LEN=48 TOS=0x00 PREC=0x40 TTL=113 ID=52382 PROTO=TCP SPT=56499 DPT=22 WINDOW=65535 RES=0x00 SYN URGP=0
+Apr 11 06:30:38 localhost kernel: [952175.649060] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=34.87.131.218 DST=112.101.251.51 LEN=40 TOS=0x00 PREC=0x00 TTL=250 ID=37003 PROTO=TCP SPT=57752 DPT=3306 WINDOW=1024 RES=0x00 SYN URGP=0
+Apr 11 06:30:44 localhost kernel: [952182.316975] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=193.163.125.251 DST=112.101.251.51 LEN=44 TOS=0x08 PREC=0x20 TTL=243 ID=4513 PROTO=TCP SPT=55797 DPT=22 WINDOW=14600 RES=0x00 SYN URGP=0
+Apr 11 06:52:07 localhost kernel: [953464.809823] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=112.85.42.227 DST=112.101.251.51 LEN=40 TOS=0x00 PREC=0x40 TTL=233 ID=62773 PROTO=TCP SPT=9090 DPT=22 WINDOW=65535 RES=0x00 SYN URGP=0
+Apr 11 07:26:49 localhost kernel: [955547.285405] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=164.92.220.20 DST=112.101.251.51 LEN=40 TOS=0x00 PREC=0x40 TTL=238 ID=54321 PROTO=TCP SPT=44144 DPT=22 WINDOW=65535 RES=0x00 SYN URGP=0
+Apr 15 21:33:49 localhost kernel: [1351970.483799] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=52.91.109.201 DST=112.101.251.51 LEN=52 TOS=0x0A PREC=0x20 TTL=104 ID=18588 DF PROTO=TCP SPT=52328 DPT=3389 WINDOW=64240 RES=0x00 CWR ECE SYN URGP=0
+```
+
+It should not block UDP scans, which don't rely on TCP SYN packets, and would need to be dealt with separately. For example, the following line should be ignored because it represents a UDP packet:
+
+```
+Apr 15 21:33:50 localhost kernel: [1351970.483799] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:92:e5:cb:61:e2:5d:50:52:8c:64:08:00 SRC=52.91.109.201 DST=112.101.251.51 LEN=52 TOS=0x00 PREC=0x20 TTL=104 ID=18588 DF PROTO=UDP SPT=52 DPT=442 LEN=83
+```
+
 ## Installation
 
 1. Copy the desired filter files from `fail2ban/filter.d/` to `/etc/fail2ban/filter.d/` in your server.
@@ -42,6 +63,14 @@ You can test the Nginx HTTP no verb filter against your current Nginx log using 
 
 ```
 fail2ban-regex --print-all-matched --print-all-ignored /var/log/nginx/access.log /etc/fail2ban/filter.d/nginx-http-no-verb.conf /etc/fail2ban/filter.d/nginx-http-no-verb.conf
+```
+
+#### UFW TCP SYN
+
+You can test the UFW TCP SYN filter against your current UFW log using the following command:
+
+```
+fail2ban-regex --print-all-matched --print-all-ignored /var/log/ufw.log /etc/fail2ban/filter.d/ufw-tcp-syn.conf /etc/fail2ban/filter.d/ufw-tcp-syn.conf
 ```
 
 ### Restart Fail2ban
