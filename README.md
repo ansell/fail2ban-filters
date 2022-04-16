@@ -4,6 +4,8 @@ This repository contains Fail2ban filters that aim to reduce log noise from scan
 
 ## Filters
 
+Each of the filters can be used independently.
+
 ### Nginx HTTP no verb
 
 The `nginx-http-no-verb` filter uses the expected syntax of the HTTP Request line to identify unexpected HTTP queries that were sent to Nginx.
@@ -36,7 +38,11 @@ It is highly recommended to do testing on your actual log files before restartin
 
 #### Nginx HTTP no verb
 
-Run `fail2ban-regex --print-all-matched --print-all-ignored /var/log/nginx/access.log /etc/fail2ban/filter.d/nginx-http-no-verb.conf /etc/fail2ban/filter.d/nginx-http-no-verb.conf`
+You can test the Nginx HTTP no verb filter against your current Nginx log using the following command:
+
+```
+fail2ban-regex --print-all-matched --print-all-ignored /var/log/nginx/access.log /etc/fail2ban/filter.d/nginx-http-no-verb.conf /etc/fail2ban/filter.d/nginx-http-no-verb.conf
+```
 
 ### Restart Fail2ban
 
